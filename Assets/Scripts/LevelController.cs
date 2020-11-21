@@ -1,9 +1,11 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.UI;
 
 public class LevelController : MonoBehaviour
 {
+    [SerializeField] GameObject _timeSlider;
     // Update is called once per frame
     void Update()
     {
@@ -11,5 +13,6 @@ public class LevelController : MonoBehaviour
         {
             Application.Quit();
         }
+        Time.timeScale = _timeSlider.GetComponent<Slider>().value;
     }
 }
