@@ -8,9 +8,11 @@ public class ParticleSeek : MonoBehaviour
     [SerializeField] Slider _galaxyShape;
     [SerializeField] Slider _galaxyForce;
     [SerializeField] Slider _galaxySpread;
+    [SerializeField] Slider _galaxyParticles;
 
     public Transform target;
     public float force = 10.0f;
+    public int baseEmissionRate = 100;
 
     public bool perlinBool = true;
 
@@ -40,6 +42,9 @@ public class ParticleSeek : MonoBehaviour
 
         var velocity = ps.velocityOverLifetime;
         velocity.radial = _galaxySpread.value;
+
+        var emissionRate = ps.emission;
+        emissionRate.rate = baseEmissionRate * _galaxyParticles.value;
 
         ParticleSystem.Particle[] particles = new ParticleSystem.Particle[ps.particleCount];
         ps.GetParticles(particles);
