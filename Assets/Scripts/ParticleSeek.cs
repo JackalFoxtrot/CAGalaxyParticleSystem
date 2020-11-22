@@ -15,6 +15,7 @@ public class ParticleSeek : MonoBehaviour
     public int baseEmissionRate = 100;
 
     public bool perlinBool = true;
+    public bool paused = false;
 
     ParticleSystem ps;
 
@@ -27,68 +28,76 @@ public class ParticleSeek : MonoBehaviour
     // Update is called once per frame
     void LateUpdate()
     {
-        var shape = ps.shape;
+        if(!paused)
+        {
+            var shape = ps.shape;
+
+            if (_galaxyShape.value != 1)
+            {
+                shape.arcSpread = 1.0f / _galaxyShape.value;
+            }
+            else
+            {
+                shape.arcSpread = 0;
+            }
+
+            force = _galaxyForce.value;
+
+            var velocity = ps.velocityOverLifetime;
+            velocity.radial = _galaxySpread.value;
+
+            var emissionRate = ps.emission;
+            emissionRate.rate = baseEmissionRate * _galaxyParticles.value;
+
+            ParticleSystem.Particle[] particles = new ParticleSystem.Particle[ps.particleCount];
+            ps.GetParticles(particles);
+
+            for (int i = 0; i < particles.Length; i++)
+            {
+                ParticleSystem.Particle p = particles[i];
+
+                Vector3 particleWorldPosition;
+                if (ps.main.simulationSpace == ParticleSystemSimulationSpace.Local)
+                {
+                    particleWorldPosition = transform.TransformPoint(p.position);
+                }
+                else if (ps.main.simulationSpace == ParticleSystemSimulationSpace.Custom)
+                {
+                    particleWorldPosition = ps.main.customSimulationSpace.TransformPoint(p.position);
+                }
+                else
+                {
+                    particleWorldPosition = p.position;
+                }
+                Vector3 directionToTarget = (target.position - particleWorldPosition).normalized;
+
+                Vector3 seekForce;
+                if (perlinBool)
+                {
+                    seekForce = (directionToTarget * force * (Mathf.PerlinNoise(p.position.x, p.position.y) + 0.5f)) * Time.deltaTime;
+                }
+                else
+                {
+                    seekForce = (directionToTarget * force) * Time.deltaTime;
+                }
+
+                p.velocity += seekForce;
+
+                particles[i] = p;
+            }
+
+            ps.SetParticles(particles, particles.Length);
+        }
         
-        if(_galaxyShape.value != 1)
-        {
-            shape.arcSpread = 1.0f / _galaxyShape.value;
-        }
-        else
-        {
-            shape.arcSpread = 0;
-        }
-
-        force = _galaxyForce.value;
-
-        var velocity = ps.velocityOverLifetime;
-        velocity.radial = _galaxySpread.value;
-
-        var emissionRate = ps.emission;
-        emissionRate.rate = baseEmissionRate * _galaxyParticles.value;
-
-        ParticleSystem.Particle[] particles = new ParticleSystem.Particle[ps.particleCount];
-        ps.GetParticles(particles);
-
-        for(int i=0; i<particles.Length; i++)
-        {
-            ParticleSystem.Particle p = particles[i];
-
-            Vector3 particleWorldPosition;
-            if (ps.main.simulationSpace == ParticleSystemSimulationSpace.Local)
-            {
-                particleWorldPosition = transform.TransformPoint(p.position);
-            }
-            else if(ps.main.simulationSpace == ParticleSystemSimulationSpace.Custom)
-            {
-                particleWorldPosition = ps.main.customSimulationSpace.TransformPoint(p.position);
-            }
-            else
-            {
-                particleWorldPosition = p.position;
-            }
-            Vector3 directionToTarget = (target.position - particleWorldPosition).normalized;
-            
-            Vector3 seekForce;
-            if (perlinBool)
-            {
-                seekForce = (directionToTarget * force * (Mathf.PerlinNoise(p.position.x, p.position.y) + 0.5f)) * Time.deltaTime;
-            }
-            else
-            {
-                seekForce = (directionToTarget * force) * Time.deltaTime;
-            }
-            
-            p.velocity += seekForce;
-
-            particles[i] = p;
-        }
-
-        ps.SetParticles(particles, particles.Length);
     }
 
     public void TogglePerlinNoise()
     {
         perlinBool = !perlinBool;
         Debug.Log("Perlin Bool: "+perlinBool);
+    }
+    public void TogglePaused(bool currentState)
+    {
+        paused = currentState;
     }
 }
